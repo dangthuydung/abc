@@ -29,6 +29,16 @@ resource "aws_subnet" "subnet-private-1" {
   }
 }
 
+resource "aws_subnet" "subnet-private-2" {
+  vpc_id     = aws_vpc.vpc-demo-1.id
+  cidr_block = "10.0.3.0/24"
+  availability_zone = "ap-southeast-1b"
+
+  tags = {
+    Name = "subnet-private-2"
+  }
+}
+
 #tao internet gateway
 resource "aws_internet_gateway" "gw-demo" {
   vpc_id = aws_vpc.vpc-demo-1.id
@@ -59,19 +69,29 @@ resource "aws_route_table_association" "a" {
 }
 
 #tao security group
+resource "aws_security_group_rule" "example" {
+  type              = "ingress"
+  from_port         = 22
+  to_port           = 22
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.basion-demo-sg.id
+}
+
+resource "aws_security_group_rule" "example11" {
+  type              = "ingress"
+  from_port         = 22
+  to_port           = 22
+  protocol          = "tcp"
+  source_security_group_id = aws_security_group.basion-demo-sg.id 
+  security_group_id = aws_security_group.app-demo-sg.id
+}
+
 resource "aws_security_group" "basion-demo-sg" {
   name        = "basion-demo-sg"
   description = "Allow ssh inbound traffic"
   vpc_id      = aws_vpc.vpc-demo-1.id
 
-  ingress {
-    description      = "SSH"
-    from_port        = 22
-    to_port          = 22
-    protocol         = "tcp"
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
-  }
 
   egress {
     from_port        = 0
@@ -92,14 +112,6 @@ resource "aws_security_group" "app-demo-sg" {
   description = "Allow ssh inbound traffic"
   vpc_id      = aws_vpc.vpc-demo-1.id
 
-  ingress {
-    description      = "SSH"
-    from_port        = 22
-    to_port          = 22
-    protocol         = "tcp"
-    security_groups = [aws_security_group.basion-demo-sg.id]
-    
-  }
 
   ingress {
     description      = "HTTP"
@@ -135,7 +147,7 @@ resource "aws_network_interface" "test1" {
 
 resource "aws_network_interface" "test2" {
   subnet_id       = aws_subnet.subnet-private-1.id
-  private_ips     = ["10.0.1.51"]
+  private_ips     = ["10.0.2.51"]
   security_groups = [aws_security_group.app-demo-sg.id]
 
 
@@ -151,7 +163,7 @@ resource "aws_network_interface" "test2" {
 resource "aws_instance" "basion-demo-ec2" {
   ami           = "ami-055d15d9cfddf7bd3"
   instance_type = "t2.micro"
-  key_name = "basion-key"
+  key_name = "bastion-key"
 
   network_interface {
     network_interface_id = aws_network_interface.test1.id
@@ -170,7 +182,7 @@ resource "aws_instance" "basion-demo-ec2" {
 resource "aws_instance" "app-demo-ec2" {
   ami           = "ami-055d15d9cfddf7bd3"
   instance_type = "t2.micro"
-  key_name = "app-demo-key"
+  key_name = "app-key"
 
   network_interface {
     network_interface_id = aws_network_interface.test2.id
@@ -186,8 +198,7 @@ resource "aws_instance" "app-demo-ec2" {
   user_data = <<-EOF
     sudo apt install -y update
     sudo apt install -y nginx
-    sudo apt install mysql-server
-    sudo apt install php-fpm php-mysql
+   
 
 
   EOF
