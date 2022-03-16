@@ -69,23 +69,6 @@ resource "aws_route_table_association" "a" {
 }
 
 #tao security group
-resource "aws_security_group_rule" "example" {
-  type              = "ingress"
-  from_port         = 22
-  to_port           = 22
-  protocol          = "tcp"
-  cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.basion-demo-sg.id
-}
-
-resource "aws_security_group_rule" "example11" {
-  type              = "ingress"
-  from_port         = 22
-  to_port           = 22
-  protocol          = "tcp"
-  source_security_group_id = aws_security_group.basion-demo-sg.id 
-  security_group_id = aws_security_group.app-demo-sg.id
-}
 
 resource "aws_security_group" "basion-demo-sg" {
   name        = "basion-demo-sg"
@@ -135,13 +118,29 @@ resource "aws_security_group" "app-demo-sg" {
   }
 }
 
-# tao network interface
+resource "aws_security_group_rule" "example11" {
+  type              = "ingress"
+  from_port         = 22
+  to_port           = 22
+  protocol          = "tcp"
+  source_security_group_id = aws_security_group.basion-demo-sg.id 
+  security_group_id = aws_security_group.app-demo-sg.id
+}
 
+resource "aws_security_group_rule" "example" {
+  type              = "ingress"
+  from_port         = 22
+  to_port           = 22
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.basion-demo-sg.id
+}
+
+# tao network interface
 resource "aws_network_interface" "test1" {
   subnet_id       = aws_subnet.subnet-public-1.id
   private_ips     = ["10.0.1.50"]
   security_groups = [aws_security_group.basion-demo-sg.id]
-
 
 }
 
@@ -152,6 +151,7 @@ resource "aws_network_interface" "test2" {
 
 
 }
+
 #tao ElasticIP
  resource "aws_eip" "one" {
   vpc                       = true
@@ -159,6 +159,7 @@ resource "aws_network_interface" "test2" {
   associate_with_private_ip = "10.0.1.50"
   depends_on                = [aws_internet_gateway.gw-demo]
 }
+
 #tao ec2 instance
 resource "aws_instance" "basion-demo-ec2" {
   ami           = "ami-055d15d9cfddf7bd3"
@@ -198,9 +199,5 @@ resource "aws_instance" "app-demo-ec2" {
   user_data = <<-EOF
     sudo apt install -y update
     sudo apt install -y nginx
-   
-
-
   EOF
-
 }
