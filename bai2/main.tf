@@ -87,12 +87,10 @@ resource "aws_security_group" "basion-demo-sg" {
   }
 }
 
-
 resource "aws_security_group" "app-demo-sg" {
   name        = "app-demo-sg"
   description = "Allow ssh inbound traffic"
   vpc_id      = aws_vpc.vpc-demo-1.id
-
 
   ingress {
     description      = "HTTP"
