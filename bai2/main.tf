@@ -69,12 +69,10 @@ resource "aws_route_table_association" "a" {
 }
 
 #tao security group
-
 resource "aws_security_group" "basion-demo-sg" {
   name        = "basion-demo-sg"
   description = "Allow ssh inbound traffic"
   vpc_id      = aws_vpc.vpc-demo-1.id
-
 
   egress {
     from_port        = 0
