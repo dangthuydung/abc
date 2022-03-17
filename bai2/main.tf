@@ -39,6 +39,15 @@ resource "aws_subnet" "subnet-private-2" {
   }
 }
 
+resource "aws_subnet" "subnet-public-2" {
+  vpc_id     = aws_vpc.vpc-demo-1.id
+  cidr_block = "10.0.4.0/24"
+  availability_zone = "ap-southeast-1b"
+
+  tags = {
+    Name = "subnet-public-2"
+  }
+}
 #tao internet gateway
 resource "aws_internet_gateway" "gw-demo" {
   vpc_id = aws_vpc.vpc-demo-1.id
@@ -64,7 +73,7 @@ resource "aws_route_table" "route-table-demo" {
 
 # routetable association
 resource "aws_route_table_association" "a" {
-  subnet_id      = aws_subnet.subnet-public-1.id
+  subnet_id      = [aws_subnet.subnet-public-1.id, aws_subnet.subnet-public-2.id]
   route_table_id = aws_route_table.route-table-demo.id
 }
 
@@ -110,7 +119,35 @@ resource "aws_security_group" "app-demo-sg" {
   }
 
   tags = {
-    Name = "basion-demo-sg"
+    Name = "app-demo-sg"
+  }
+}
+
+#security group cho alb
+resource "aws_security_group" "alb-demo-sg" {
+  name        = "lb-demo-sg"
+  description = "Allow ssh inbound traffic"
+  vpc_id      = aws_vpc.vpc-demo-1.id
+
+  ingress {
+    description      = "HTTP"
+    from_port        = 80
+    to_port          = 80
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    
+  }
+
+  egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  tags = {
+    Name = "alb-demo-sg"
   }
 }
 
@@ -134,7 +171,9 @@ resource "aws_security_group_rule" "example" {
 
 # tao network interface
 resource "aws_network_interface" "test1" {
-  subnet_id       = aws_subnet.subnet-public-1.id
+  subnet_id       = [
+    aws_subnet.subnet-public-1.id, 
+    aws_subnet.subnet-public-2.id]
   private_ips     = ["10.0.1.50"]
   security_groups = [aws_security_group.basion-demo-sg.id]
 
@@ -166,7 +205,7 @@ resource "aws_instance" "basion-demo-ec2" {
     network_interface_id = aws_network_interface.test1.id
     device_index         = 0
   }
-
+  
   credit_specification {
     cpu_credits = "unlimited"
   }
@@ -196,4 +235,64 @@ resource "aws_instance" "app-demo-ec2" {
     sudo apt install -y update
     sudo apt install -y nginx
   EOF
+}
+
+#tao alb
+module "alb" {
+  source  = "terraform-aws-modules/alb/aws"
+  version = "~> 6.0"
+
+  name = "my-alb-demo"
+
+  load_balancer_type = "application"
+
+  vpc_id             = "vpc-demo-1"
+  subnets            = [
+    aws_subnet.subnet-public-1.id,
+    aws_subnet.subnet-public-2.id]
+  security_groups    = [aws_security_group.alb-demo-sg.id]
+
+  access_logs = {
+    bucket = "my-alb-logs"
+  }
+
+  target_groups = [
+    {
+      name_prefix      = "pref-"
+      backend_protocol = "HTTP"
+      backend_port     = 80
+      target_type      = "instance"
+      targets = [
+        {
+          target_id = "i-0123456789abcdefg"
+          port = 80
+        },
+        {
+          target_id = "i-a1b2c3d4e5f6g7h8i"
+          port = 8080
+        }
+      ]
+    }
+  ]
+
+  https_listeners = [
+    {
+      port               = 443
+      protocol           = "HTTPS"
+      certificate_arn    = "arn:aws:iam::123456789012:server-certificate/test_cert-123456789012"
+      target_group_index = 0
+    }
+  ]
+
+  http_tcp_listeners = [
+    {
+      port               = 80
+      protocol           = "HTTP"
+      target_group_index = 0
+    }
+  ]
+
+  tags = {
+    Environment = "Test"
+  }
 }
