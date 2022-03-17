@@ -138,6 +138,15 @@ resource "aws_security_group" "alb-demo-sg" {
     
   }
 
+  ingress {
+    description      = "SSH"
+    from_port        = 22
+    to_port          = 22
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    
+  }
+
   egress {
     from_port        = 0
     to_port          = 0
@@ -171,16 +180,14 @@ resource "aws_security_group_rule" "example" {
 
 # tao network interface
 resource "aws_network_interface" "test1" {
-  subnet_id       = [
-    aws_subnet.subnet-public-1.id, 
-    aws_subnet.subnet-public-2.id]
+  subnet_id       = aws_subnet.subnet-public-1.id
   private_ips     = ["10.0.1.50"]
   security_groups = [aws_security_group.basion-demo-sg.id]
 
 }
 
 resource "aws_network_interface" "test2" {
-  subnet_id       = aws_subnet.subnet-private-1.id
+  subnet_id       = aws_subnet.subnet-public-2.id
   private_ips     = ["10.0.2.51"]
   security_groups = [aws_security_group.app-demo-sg.id]
 
@@ -190,7 +197,7 @@ resource "aws_network_interface" "test2" {
 #tao ElasticIP
  resource "aws_eip" "one" {
   vpc                       = true
-  network_interface         = aws_network_interface.test1.id
+  network_interface         = [aws_network_interface.test1.id, aws_network_interface.test2.id]
   associate_with_private_ip = "10.0.1.50"
   depends_on                = [aws_internet_gateway.gw-demo]
 }
@@ -231,68 +238,76 @@ resource "aws_instance" "app-demo-ec2" {
   tags = {
       name = "app-demo-ec2"
   }
-  user_data = <<-EOF
-    sudo apt install -y update
-    sudo apt install -y nginx
-  EOF
 }
 
 #tao alb
-module "alb" {
-  source  = "terraform-aws-modules/alb/aws"
-  version = "~> 6.0"
-
-  name = "my-alb-demo"
-
+resource "aws_lb" "test-alb" {
+  name               = "test-alb"
+  internal           = false
   load_balancer_type = "application"
-
-  vpc_id             = "vpc-demo-1"
-  subnets            = [
-    aws_subnet.subnet-public-1.id,
-    aws_subnet.subnet-public-2.id]
   security_groups    = [aws_security_group.alb-demo-sg.id]
+  subnets            = [aws_subnet.subnet-public-2.id]
 
-  access_logs = {
-    bucket = "my-alb-logs"
+  enable_deletion_protection = false
+
+  access_logs {
+    bucket  = [aws_s3_bucket.demo_mysql_db.bucket]
+  }
+}
+
+#tao alb target group 
+resource "aws_alb_target_group" "alb-tg-demo" {
+ count = 2
+ name = "alb-tg-demo"
+ port = 80
+ protocol = "HTTP"
+ vpc_id   = [aws_vpc.vpc-demo-1.id]
+
+ health_check {
+ interval = 30
+ path = "/index.html"
+ port = 80
+ protocol = "HTTP"
+ timeout = 5
+ unhealthy_threshold = 2
+ matcher = 200
+ }
+}   
+
+# tao alb target group attachment
+resource "aws_lb_target_group_attachment" "attach-alb-demo" {
+  target_group_arn = [aws_lb_target_group.alb-tg-demo.arn]
+  target_id        = [aws_instance.app-demo-ec2.id]
+  port             = 80
+}
+
+#tao listener cho load_balancer
+resource "aws_lb_listener" "alb-listener" {
+  load_balancer_arn = [aws_lb.test-alb.arn]
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = "arn:aws:iam::187416307283:server-certificate/test_cert_rab3wuqwgja25ct3n4jdj2tzu4"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = [aws_lb_target_group.front_end.arn]
+  }
+}
+
+resource "aws_lb_listener_rule" "static" {
+  listener_arn = [aws_lb_listener.alb-listener.arn]
+  priority     = 100
+
+  action {
+    type             = "forward"
+    target_group_arn = [aws_lb_target_group.alb-tg-demo.arn]
   }
 
-  target_groups = [
-    {
-      name_prefix      = "pref-"
-      backend_protocol = "HTTP"
-      backend_port     = 80
-      target_type      = "instance"
-      targets = [
-        {
-          target_id = "i-0123456789abcdefg"
-          port = 80
-        },
-        {
-          target_id = "i-a1b2c3d4e5f6g7h8i"
-          port = 8080
-        }
-      ]
-    }
-  ]
 
-  https_listeners = [
-    {
-      port               = 443
-      protocol           = "HTTPS"
-      certificate_arn    = "arn:aws:iam::123456789012:server-certificate/test_cert-123456789012"
-      target_group_index = 0
+  condition {
+    path_pattern {
+      values = ["/target/*"]
     }
-  ]
-
-  http_tcp_listeners = [
-    {
-      port               = 80
-      protocol           = "HTTP"
-      target_group_index = 0
-    }
-  ]
-
-  tags = {
-    Environment = "Test"
   }
 }
