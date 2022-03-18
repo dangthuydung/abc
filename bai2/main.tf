@@ -73,7 +73,12 @@ resource "aws_route_table" "route-table-demo" {
 
 # routetable association
 resource "aws_route_table_association" "a" {
-  subnet_id      = [aws_subnet.subnet-public-1.id, aws_subnet.subnet-public-2.id]
+  subnet_id      = aws_subnet.subnet-public-1.id
+  route_table_id = aws_route_table.route-table-demo.id
+}
+
+resource "aws_route_table_association" "a1" {
+  subnet_id      = aws_subnet.subnet-public-2.id
   route_table_id = aws_route_table.route-table-demo.id
 }
 
@@ -188,23 +193,28 @@ resource "aws_network_interface" "test1" {
 
 resource "aws_network_interface" "test2" {
   subnet_id       = aws_subnet.subnet-public-2.id
-  private_ips     = ["10.0.2.51"]
+  private_ips     = ["10.0.4.51"]
   security_groups = [aws_security_group.app-demo-sg.id]
-
-
 }
 
 #tao ElasticIP
  resource "aws_eip" "one" {
   vpc                       = true
-  network_interface         = [aws_network_interface.test1.id, aws_network_interface.test2.id]
+  network_interface         = aws_network_interface.test1.id
   associate_with_private_ip = "10.0.1.50"
+  depends_on                = [aws_internet_gateway.gw-demo]
+}
+
+resource "aws_eip" "two" {
+  vpc                       = true
+  network_interface         = aws_network_interface.test2.id
+  associate_with_private_ip = "10.0.4.51"
   depends_on                = [aws_internet_gateway.gw-demo]
 }
 
 #tao ec2 instance
 resource "aws_instance" "basion-demo-ec2" {
-  ami           = "ami-055d15d9cfddf7bd3"
+  ami           = "ami-0801a1e12f4a9ccc0"
   instance_type = "t2.micro"
   key_name = "bastion-key"
 
@@ -223,7 +233,7 @@ resource "aws_instance" "basion-demo-ec2" {
 }
 
 resource "aws_instance" "app-demo-ec2" {
-  ami           = "ami-055d15d9cfddf7bd3"
+  ami           = "ami-0801a1e12f4a9ccc0"
   instance_type = "t2.micro"
   key_name = "app-key"
 
@@ -238,76 +248,65 @@ resource "aws_instance" "app-demo-ec2" {
   tags = {
       name = "app-demo-ec2"
   }
+  user_data == <<-EOF
+    sudo apt install -y update
+    sudo apt install php php-cli php-fpm php-json php-common php-mysql php-zip php-gd php-mbst
+    sudo apt install composer -y
+    composer create-project --prefer-dist laravel/laravel my_app
+  EOF
 }
 
 #tao alb
-resource "aws_lb" "test-alb" {
+resource "aws_alb" "test-alb" {
   name               = "test-alb"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb-demo-sg.id]
-  subnets            = [aws_subnet.subnet-public-2.id]
+  subnets            = [aws_subnet.subnet-public-2.id,aws_subnet.subnet-public-1.id]
 
   enable_deletion_protection = false
-
-  access_logs {
-    bucket  = [aws_s3_bucket.demo_mysql_db.bucket]
-  }
 }
 
 #tao alb target group 
 resource "aws_alb_target_group" "alb-tg-demo" {
- count = 2
- name = "alb-tg-demo"
- port = 80
- protocol = "HTTP"
- vpc_id   = [aws_vpc.vpc-demo-1.id]
-
- health_check {
- interval = 30
- path = "/index.html"
- port = 80
- protocol = "HTTP"
- timeout = 5
- unhealthy_threshold = 2
- matcher = 200
- }
+  name = "alb-tg-demo"
+  port = 80
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.vpc-demo-1.id
 }   
 
 # tao alb target group attachment
-resource "aws_lb_target_group_attachment" "attach-alb-demo" {
-  target_group_arn = [aws_lb_target_group.alb-tg-demo.arn]
-  target_id        = [aws_instance.app-demo-ec2.id]
+resource "aws_alb_target_group_attachment" "attach-alb-demo" {
+  target_group_arn = aws_alb_target_group.alb-tg-demo.arn
+  target_id        = aws_instance.app-demo-ec2.id
   port             = 80
 }
 
-#tao listener cho load_balancer
-resource "aws_lb_listener" "alb-listener" {
-  load_balancer_arn = [aws_lb.test-alb.arn]
-  port              = "443"
-  protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-2016-08"
-  certificate_arn   = "arn:aws:iam::187416307283:server-certificate/test_cert_rab3wuqwgja25ct3n4jdj2tzu4"
+#tao listener cho alb
+resource "aws_alb_listener" "alb-listener" {
+  load_balancer_arn = aws_alb.test-alb.arn
+  port              = "80"
+  protocol          = "HTTP"
 
   default_action {
     type             = "forward"
-    target_group_arn = [aws_lb_target_group.front_end.arn]
+    target_group_arn = aws_alb_target_group.alb-tg-demo.arn
   }
 }
 
-resource "aws_lb_listener_rule" "static" {
-  listener_arn = [aws_lb_listener.alb-listener.arn]
+resource "aws_alb_listener_rule" "static" {
+  listener_arn = aws_alb_listener.alb-listener.arn
   priority     = 100
 
   action {
     type             = "forward"
-    target_group_arn = [aws_lb_target_group.alb-tg-demo.arn]
+    target_group_arn = aws_alb_target_group.alb-tg-demo.arn
   }
-
 
   condition {
     path_pattern {
-      values = ["/target/*"]
+      values = ["/static/*"]
     }
   }
 }
+
