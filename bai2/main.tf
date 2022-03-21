@@ -248,7 +248,7 @@ resource "aws_instance" "app-demo-ec2" {
   tags = {
       name = "app-demo-ec2"
   }
-  user_data == <<-EOF
+  user_data = <<-EOF
     sudo apt install -y update
     sudo apt install php php-cli php-fpm php-json php-common php-mysql php-zip php-gd php-mbst
     sudo apt install composer -y

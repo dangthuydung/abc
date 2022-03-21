@@ -6,3 +6,4 @@ variable "username" {
 variable "password" {
     default = "pass0123456"
 }
+
