@@ -235,7 +235,7 @@ resource "aws_instance" "basion-demo-ec2" {
 resource "aws_instance" "app-demo-ec2" {
   ami           = "ami-0801a1e12f4a9ccc0"
   instance_type = "t2.micro"
-  key_name = "app-key"
+  key_name = "app-key-1"
 
   network_interface {
     network_interface_id = aws_network_interface.test2.id
@@ -248,12 +248,6 @@ resource "aws_instance" "app-demo-ec2" {
   tags = {
       name = "app-demo-ec2"
   }
-  user_data = <<-EOF
-    sudo apt install -y update
-    sudo apt install php php-cli php-fpm php-json php-common php-mysql php-zip php-gd php-mbst
-    sudo apt install composer -y
-    composer create-project --prefer-dist laravel/laravel my_app
-  EOF
 }
 
 #tao alb
@@ -273,6 +267,16 @@ resource "aws_alb_target_group" "alb-tg-demo" {
   port = 80
   protocol = "HTTP"
   vpc_id   = aws_vpc.vpc-demo-1.id
+
+   health_check {
+    interval            = 30
+    path                = "/index.html"
+    port                = 80
+    protocol            = "HTTP"
+    timeout             = 5
+    unhealthy_threshold = 2
+    matcher             = 200
+  }
 }   
 
 # tao alb target group attachment
