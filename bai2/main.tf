@@ -128,6 +128,24 @@ resource "aws_security_group" "app-demo-sg" {
   }
 }
 
+resource "aws_security_group_rule" "example11" {
+  type              = "ingress"
+  from_port         = 22
+  to_port           = 22
+  protocol          = "tcp"
+  source_security_group_id = aws_security_group.basion-demo-sg.id 
+  security_group_id = aws_security_group.app-demo-sg.id
+}
+
+resource "aws_security_group_rule" "example" {
+  type              = "ingress"
+  from_port         = 22
+  to_port           = 22
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.basion-demo-sg.id
+}
+
 #security group cho alb
 resource "aws_security_group" "alb-demo-sg" {
   name        = "lb-demo-sg"
@@ -165,24 +183,6 @@ resource "aws_security_group" "alb-demo-sg" {
   }
 }
 
-resource "aws_security_group_rule" "example11" {
-  type              = "ingress"
-  from_port         = 22
-  to_port           = 22
-  protocol          = "tcp"
-  source_security_group_id = aws_security_group.basion-demo-sg.id 
-  security_group_id = aws_security_group.app-demo-sg.id
-}
-
-resource "aws_security_group_rule" "example" {
-  type              = "ingress"
-  from_port         = 22
-  to_port           = 22
-  protocol          = "tcp"
-  cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.basion-demo-sg.id
-}
-
 # tao network interface
 resource "aws_network_interface" "test1" {
   subnet_id       = aws_subnet.subnet-public-1.id
@@ -214,7 +214,7 @@ resource "aws_eip" "two" {
 
 #tao ec2 instance
 resource "aws_instance" "basion-demo-ec2" {
-  ami           = "ami-0801a1e12f4a9ccc0"
+  ami           = "ami-055d15d9cfddf7bd3"
   instance_type = "t2.micro"
   key_name = "bastion-key"
 
@@ -233,7 +233,7 @@ resource "aws_instance" "basion-demo-ec2" {
 }
 
 resource "aws_instance" "app-demo-ec2" {
-  ami           = "ami-0801a1e12f4a9ccc0"
+  ami           = "ami-055d15d9cfddf7bd3"
   instance_type = "t2.micro"
   key_name = "app-key-1"
 
