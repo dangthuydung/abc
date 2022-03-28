@@ -249,6 +249,7 @@ resource "aws_instance" "app-demo-ec2" {
       name = "app-demo-ec2"
   }
   user_data = <<-EOF
+    #! /bin/bash
     sudo apt update
     sudo apt install nginx
     sudo apt install mysql-server 
@@ -270,7 +271,7 @@ resource "aws_instance" "app-demo-ec2" {
     sudo ln -s /etc/nginx/sites-available/danhsach /etc/nginx/sites-enabled/ 
     sudo systemctl reload nginx 
   EOF
-}
+} 
 
 #tao alb
 resource "aws_alb" "test-alb" {
