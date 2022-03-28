@@ -248,6 +248,28 @@ resource "aws_instance" "app-demo-ec2" {
   tags = {
       name = "app-demo-ec2"
   }
+  user_data = <<-EOF
+    sudo apt update
+    sudo apt install nginx
+    sudo apt install mysql-server 
+    sudo mysql_secure_installation
+    sudo apt install php-fpm php-mysql
+    sudo apt install php-cli unzip
+    curl -sS https://getcomposer.org/installer -o /tmp/composer-setup.php 
+    HASH=`curl -sS https://composer.github.io/installer.sig`
+    echo $HASH 
+    php -r "if (hash_file('SHA384', '/tmp/composer-setup.php') === '$HASH') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;" 
+    sudo php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer 
+    composer
+    sudo apt install php-mbstring php-xml php-bcmath 
+    composer create-project --prefer-dist laravel/laravel danhsach
+    php artisan
+    sudo mv ~/danhsach /var/www/danhsach 
+    sudo chown -R www-data.www-data /var/www/danhsach/storage
+    sudo chown -R www-data.www-data /var/www/danhsach/bootstrap/cache 
+    sudo ln -s /etc/nginx/sites-available/danhsach /etc/nginx/sites-enabled/ 
+    sudo systemctl reload nginx 
+  EOF
 }
 
 #tao alb
