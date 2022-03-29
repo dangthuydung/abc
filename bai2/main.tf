@@ -298,8 +298,6 @@ resource "aws_instance" "app-demo-ec2" {
     #! /bin/bash
     sudo apt update
     sudo apt install nginx
-    sudo apt install mysql-server 
-    sudo mysql_secure_installation
     sudo apt install php-fpm php-mysql
     sudo apt install php-cli unzip
     curl -sS https://getcomposer.org/installer -o /tmp/composer-setup.php 
