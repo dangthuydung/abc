@@ -213,7 +213,7 @@ resource "aws_eip" "two" {
 }
 
 #tao aws iam role cho s3 den ec2
-resource "aws_iam_role" "test_role-demo" {
+resource "aws_iam_role" "test_role_demo" {
   name = "test_role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -233,10 +233,17 @@ resource "aws_iam_role" "test_role-demo" {
   }
 }
 
+#tao iam instance profile
+resource "aws_iam_instance_profile" "test_profile" {
+  name = "test_profile"
+  role = aws_iam_role.test_role_demo.name
+}
+
+
   # tao aws iam role policy
   resource "aws_iam_role_policy" "test_policy-demo" {
   name = "test_policy"
-  role = aws_iam_role.test_role-demo.id
+  role = aws_iam_role.test_role_demo.id
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -275,7 +282,7 @@ resource "aws_instance" "app-demo-ec2" {
   ami           = "ami-055d15d9cfddf7bd3"
   instance_type = "t2.micro"
   key_name = "app-key-1"
-  iam_instance_profile = aws_iam_role.test_role-demo.arn 
+  iam_instance_profile = aws_iam_instance_profile.test_profile.id 
   network_interface {
     network_interface_id = aws_network_interface.test2.id
     device_index         = 0
