@@ -212,6 +212,45 @@ resource "aws_eip" "two" {
   depends_on                = [aws_internet_gateway.gw-demo]
 }
 
+#tao aws iam role cho s3 den ec2
+resource "aws_iam_role" "test_role-demo" {
+  name = "test_role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Sid    = ""
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      },
+    ]
+  })
+   tags = {
+    tag-key = "tag-value"
+  }
+}
+
+  # tao aws iam role policy
+  resource "aws_iam_role_policy" "test_policy-demo" {
+  name = "test_policy"
+  role = aws_iam_role.test_role-demo.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "ec2:Describe*",
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      },
+    ]
+  })
+}
+
 #tao ec2 instance
 resource "aws_instance" "basion-demo-ec2" {
   ami           = "ami-055d15d9cfddf7bd3"
@@ -236,7 +275,7 @@ resource "aws_instance" "app-demo-ec2" {
   ami           = "ami-055d15d9cfddf7bd3"
   instance_type = "t2.micro"
   key_name = "app-key-1"
-
+  iam_instance_profile = aws_iam_role.test_role-demo.arn 
   network_interface {
     network_interface_id = aws_network_interface.test2.id
     device_index         = 0
@@ -268,7 +307,15 @@ resource "aws_instance" "app-demo-ec2" {
     sudo mv ~/danhsach /var/www/danhsach 
     sudo chown -R www-data.www-data /var/www/danhsach/storage
     sudo chown -R www-data.www-data /var/www/danhsach/bootstrap/cache 
-    sudo ln -s /etc/nginx/sites-available/danhsach /etc/nginx/sites-enabled/ 
+    sudo rm -rf /etc/nginx/sites-enabled/*
+    aws s3 cp s3:///bucket-demo1126/nginx.txt /etc/nginx/sites-enabled/danhsach.conf
+    aws s3 cp s3:///bucket-demo1126/env.txt /var/www/danhsach/.env 
+    cd /var/www/danhsach 
+    export DB_HOST=${aws_db_instance. demo_mysql_db.address}
+    export DB_DATABASE=${aws_db_instance. demo_mysql_db.name}
+    export DB_USERNAME=${aws_db_instance. demo_mysql_db.username}
+    export DB_PASSWORD =${aws_db_instance. demo_mysql_db.password}
+    sudo php artisan config:cache
     sudo systemctl reload nginx 
   EOF
 } 
