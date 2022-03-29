@@ -294,7 +294,7 @@ resource "aws_instance" "app-demo-ec2" {
   tags = {
       name = "app-demo-ec2"
   }
-  user_data = << EOF
+  user_data = <<EOF
     #! /bin/bash
     sudo apt update
     sudo apt install nginx
