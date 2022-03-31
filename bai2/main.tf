@@ -288,7 +288,7 @@ resource "aws_instance" "app-demo-ec2" {
     device_index         = 0
   }
     
-  user_data = <<-EOF
+  user_data = <<EOF
                 #!/bin/bash
                 sudo apt update
                 sudo apt install nginx
