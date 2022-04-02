@@ -1,4 +1,4 @@
-terraform {
+/*terraform {
   backend "s3" {
     bucket = "terraform-bucket-abfffuww"
     key ="key/terraform.tfstate"
@@ -56,3 +56,4 @@ resource "aws_dynamodb_table" "basic-dynamodb-table" {
     type = "S"
   }
 }
+*/
