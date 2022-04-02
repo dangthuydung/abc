@@ -1,10 +1,10 @@
 #!/bin/bash
-sudo apt update
-sudo apt install nginx
+sudo apt -y update
+sudo apt install -y nginx
 sudo systemctl start nginx
 sudo systemctl enable nginx
-sudo apt install php-fpm php-mysql
-sudo apt install php-cli unzip
+sudo apt install -y php-fpm php-mysql
+sudo apt install -y php-cli unzip
 cd ~ 
 curl -sS https://getcomposer.org/installer -o /tmp/composer-setup.php 
 echo $HASH
