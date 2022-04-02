@@ -288,7 +288,7 @@ resource "aws_instance" "app-demo-ec2" {
     device_index         = 0
   }
     
-  user_data = filebase64("install_bash.sh")
+  user_data = filebase64("bash.sh")
   tags = {
       name = "app-demo-ec2"
     }
