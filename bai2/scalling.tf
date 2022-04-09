@@ -30,7 +30,11 @@ resource "aws_security_group" "instance-sg" {
     protocol         = "-1"
     cidr_blocks      = ["0.0.0.0/0"]
     
+  } 
+  tags = {
+    Name = "instance security group"
   }
+}
 
   resource "aws_security_group_rule" "example111" {
   type              = "ingress"
@@ -41,10 +45,7 @@ resource "aws_security_group" "instance-sg" {
   security_group_id = aws_security_group.instance-sg.id
 }
 
-  tags = {
-    Name = "instance security group"
-  }
-}
+ 
 
 resource "aws_launch_configuration" "aws_launch_conf" {
   name_prefix   = "terraform-lc-example-"
