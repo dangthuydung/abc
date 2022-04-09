@@ -32,6 +32,15 @@ resource "aws_security_group" "instance-sg" {
     
   }
 
+  resource "aws_security_group_rule" "example111" {
+  type              = "ingress"
+  from_port         = 22
+  to_port           = 22
+  protocol          = "tcp"
+  source_security_group_id = aws_security_group.basion-demo-sg.id 
+  security_group_id = aws_security_group.instance-sg.id
+}
+
   tags = {
     Name = "instance security group"
   }
@@ -42,7 +51,15 @@ resource "aws_launch_configuration" "aws_launch_conf" {
   image_id      = data.aws_ami.ubuntu.id
   instance_type = "t2.micro"
   key_name = "app-key-1"
-  user_data = filebase64("bash.sh")
+  user_data = <<EOF
+    #!/bin/bash
+  sudo apt -y update
+  sudo apt install -y nginx
+  sudo systemctl start nginx
+  sudo systemctl enable nginx
+  aws s3 cp s3:///bucket-demo1126/app-key-1.pem 
+  EOF
+
   security_groups = [aws_security_group.instance-sg.id]
 
   lifecycle {
