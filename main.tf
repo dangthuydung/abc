@@ -11,7 +11,7 @@ module "module-network" {
     // A managed resource "aws_vpc" "main" has not been declared in the root module.
 // em khong biet sua nhu nao??? 
 
-    route_table_public_id = aws_route_table.public.id
+    route_table_public_id = aws_route_table.public.route_table_public_id
     internet_gateway_id = aws_internet_gateway.igw.internet_gateway_id
 
 }
