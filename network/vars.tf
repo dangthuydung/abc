@@ -46,4 +46,8 @@ variable "privatesubnet_name" {
   default = "private subnet"
 }
 
+variable "internet_gateway_id" {}
+
+
+
 
