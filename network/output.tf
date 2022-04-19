@@ -32,3 +32,11 @@ output "internet_gateway_id" {
 output "route_table_public_id"{
     value = aws_route_table.public.id
 }
+
+output "basion_security_group_id"{
+    value = aws_security_group.basion-sg.id
+}
+
+output "web_security_group_id" {
+    value = aws_web_security_group.web-sg.id
+}
