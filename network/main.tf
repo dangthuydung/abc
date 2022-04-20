@@ -8,12 +8,12 @@ resource "aws_vpc" "main" {
 }
 
 resource "aws_subnet" "public_subnets" {
-  for_each = var.public_subnet_numbers
+  count = length(var.public_subnet_numbers)
   vpc_id     = aws_vpc.main.id
+  availability_zone = element(var.subnet_azs, count.index)
+  cidr_block = element(var.public_subnet_numbers, count.index)
   map_public_ip_on_launch = true
 
-  //10.0.0.0/16
-  cidr_block = cidrsubnet(aws_vpc.main.cidr_block, 4 ,each.value)
 
   tags = {
     Name = "${var.publicsubnet_name}"
@@ -21,24 +21,22 @@ resource "aws_subnet" "public_subnets" {
 }
 
 resource "aws_subnet" "private_subnets" {
-  for_each = var.private_subnet_numbers
+  count = length(var.private_subnet_numbers)
   vpc_id     = aws_vpc.main.id
+  availability_zone = element(var.subnet_azs, count.index)
+  cidr_block = element(var.private_subnet_numbers, count.index)
   map_public_ip_on_launch = false
-
-  //10.0.0.0/16
-  cidr_block = cidrsubnet(aws_vpc.main.cidr_block, 4 ,each.value)
 
   tags = {
     Name = "${var.privatesubnet_name}"
   }
 }
 
-
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.main.id
 }
 
-resource "aws_route_table" "public" {
+resource "aws_route_table" "route_table" {
   vpc_id = aws_vpc.main.id
 
   route {
@@ -47,10 +45,10 @@ resource "aws_route_table" "public" {
   }
 }
 
-resource "aws_route_table_association" "public" {
-  for_each  = aws_subnet.public_subnets
-  subnet_id = aws_subnet.public_subnets[each.key].id
-  route_table_id = aws_route_table.public.id
+resource "aws_route_table_association" "route_table_association" {
+  count = length(var.public_subnet_numbers)
+  subnet_id = element(aws_subnet.public_subnets.*.id, count.index)
+  route_table_id = aws_route_table.route_table.id
 
 }
 
@@ -107,7 +105,7 @@ resource "aws_security_group" "web-sg" {
   }
 }
 
-resource "aws_security_group_rule" "example11" {
+resource "aws_security_group_rule" "security_group_rule" {
   type              = "ingress"
   from_port         = 22
   to_port           = 22

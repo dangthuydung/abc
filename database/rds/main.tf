@@ -1,6 +1,6 @@
 resource "aws_db_subnet_group" "db_subnet_group" {
   name       = "main"
-  subnet_ids = [aws_subnet.public_subnets[0].id, aws_subnet.public_subnets[1].id]
+  subnet_ids = element(var.public_subnet_ids,2)
   tags = {
     Name = "My DB subnet group"
 
@@ -20,5 +20,4 @@ resource "aws_db_instance" "db_instance" {
   parameter_group_name = "default.mysql5.7"
   skip_final_snapshot  = true
 }
-
 

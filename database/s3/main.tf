@@ -1,4 +1,4 @@
-resource "aws_vpc_endpoint" "s3" {
+/*resource "aws_vpc_endpoint" "s3" {
   vpc_id       = aws_vpc.main.id
   service_name = "com.amazonaws.ap-southeast-1.s3"
 }
@@ -18,3 +18,4 @@ resource "aws_s3_bucket_acl" "s3_bucket_acl" {
 
 //lien ket ec2 - s3_bucket
 
+*/

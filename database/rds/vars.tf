@@ -28,3 +28,7 @@ variable "password" {
     default = "pass12345678"
     sensitive = true
 }
+
+variable "public_subnet_ids" {
+    type = list
+}

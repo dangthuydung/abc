@@ -16,23 +16,18 @@ variable "instance_tenancy" {
 }
 
 variable "public_subnet_numbers" {
-  type = map(number)
-  description = "Map of AZ to a number that should be used for public subnets"
-
-  default = {
-    "ap-southeast-1a" = 1
-    "ap-southeast-1b" = 2
-  }
+  type = list(string)
+  default = ["10.0.1.0/24", "10.0.2.0/24"]
 }
 
 variable "private_subnet_numbers" {
-  type = map(number)
-  description = "Map of AZ to a number that should be used for private subnets"
+  type = list(string)
+  default = ["10.0.3.0/24", "10.0.4.0/24"]
+}
 
-  default = {
-    "ap-southeast-1a" = 3
-    "ap-southeast-1b" = 4
-  }
+variable "subnet_azs" {
+  type = list(string)
+  default = ["ap-southeast-1a", "ap-southeast-1b"]
 }
 
 variable "publicsubnet_name" {

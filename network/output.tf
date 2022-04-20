@@ -11,18 +11,12 @@ output "vpc_instance_tenancy" {
     value = aws_vpc.main.instance_tenancy
 }
 
-output "vpc_public_subnet" {
-    value = {
-        for subnet in aws_subnet.public_subnets :
-        subnet.id => subnet.cidr_block
-    }
+output "public_subnets_id" {
+    value =aws_subnet.public_subnets[*].id
 }
 
-output "vpc_private_subnet" {
-    value = {
-        for subnet in aws_subnet.private_subnets :
-        subnet.id => subnet.cidr_block
-    }
+output "private_subnets_id" {
+  value = aws_subnet.private_subnets[*].id
 }
 
 output "internet_gateway_id" {
@@ -30,13 +24,13 @@ output "internet_gateway_id" {
 }
 
 output "route_table_public_id"{
-    value = aws_route_table.public.id
+    value = aws_route_table.route_table.id
 }
 
-output "basion_security_group_id"{
+output "security_group_id_basion" {
     value = aws_security_group.basion-sg.id
 }
 
-output "web_security_group_id" {
-    value = aws_web_security_group.web-sg.id
+output "security_group_id_web" {
+    value = aws_security_group.web-sg.id
 }
