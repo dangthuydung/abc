@@ -21,3 +21,4 @@ resource "aws_db_instance" "db_instance" {
   skip_final_snapshot  = true
 }
 
+
