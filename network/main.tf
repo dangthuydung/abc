@@ -105,11 +105,57 @@ resource "aws_security_group" "web-sg" {
   }
 }
 
-resource "aws_security_group_rule" "security_group_rule" {
+resource "aws_security_group_rule" "security_group_rule_web" {
   type              = "ingress"
   from_port         = 22
   to_port           = 22
   protocol          = "tcp"
   source_security_group_id = aws_security_group.basion-sg.id 
   security_group_id = aws_security_group.web-sg.id
+}
+
+//security alb
+resource "aws_security_group" "alb-sg" {
+  name        = "alb-sg"
+  description = "Allow ssh inbound traffic"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    description      = "HTTP"
+    from_port        = 80
+    to_port          = 80
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    
+  }
+
+  ingress {
+    description      = "SSH"
+    from_port        = 22
+    to_port          = 22
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    
+  }
+
+  egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  tags = {
+    Name = "alb-demo-sg"
+  }
+}
+
+resource "aws_security_group_rule" "security_group_rule_alb" {
+  type              = "ingress"
+  from_port         = 22
+  to_port           = 22
+  protocol          = "tcp"
+  source_security_group_id = aws_security_group.basion-sg.id 
+  security_group_id = aws_security_group.alb-sg.id
 }

@@ -34,3 +34,7 @@ output "security_group_id_basion" {
 output "security_group_id_web" {
     value = aws_security_group.web-sg.id
 }
+
+output "security_group_id_alb" {
+    value = aws_security_group.alb-sg.id
+}

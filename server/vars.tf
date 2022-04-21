@@ -33,5 +33,10 @@ variable "security_group_id_basion" {
 
 variable "security_group_id_web" {
   type = list
-  
 }
+
+variable "path_user_data" {
+  default = "/home/dang/modules/server/bash.sh"
+}
+
+variable "aws_iam_instance_profile" {}

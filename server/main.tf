@@ -17,7 +17,8 @@ resource "aws_instance" "web_instance" {
   key_name = var.key_name_web
   subnet_id = element(var.public_subnet_ids,1)
   vpc_security_group_ids = var.security_group_id_web
-  //A managed resource "aws_subnet" "public_subnets" has not been declared in module.module-server.
+  user_data = filebase64(var.path_user_data)
+
   tags = {
     Name = "web instance"
   }
