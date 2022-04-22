@@ -3,12 +3,12 @@ provider "aws" {
 }
 
 module "module-network" {
-    source = "/home/dang/modules/network"
+    source = "./network"
 }
 
 
 module "module-server" {
-    source = "/home/dang/modules/server"
+    source = "./server"
     public_subnet_ids  = module.module-network.public_subnets_id
     private_subnet_ids = module.module-network.private_subnets_id
     security_group_id_basion = [module.module-network.security_group_id_basion]
@@ -17,12 +17,12 @@ module "module-server" {
 }
 
 module "module-database-rds" {
-    source = "/home/dang/modules/database/rds" 
+    source = "./database/rds" 
     public_subnet_ids  = [module.module-network.public_subnets_id]
     
 }
 module "module-database-s3" {
-    source = "/home/dang/modules/database/s3"
+    source = "./database/s3"
     bucket_name = "bucket-example-112236"
     key_bucket_object_1 = "README.md"
     source_bucket_object_1 = "/home/dang/modules/README.md"
@@ -31,7 +31,7 @@ module "module-database-s3" {
 }
 
 module "module-database-alb" {
-    source = "/home/dang/modules/database/alb"
+    source = "./database/alb"
     name_alb = "alb-demo"
     public_subnets_id = module.module-network.public_subnets_id
     security_group_id_alb = module.module-network.security_group_id_alb
