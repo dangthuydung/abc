@@ -63,7 +63,7 @@ resource "aws_security_group" "basion-sg" {
     from_port        = 22
     to_port          = 22
     protocol         = "tcp"
-    cidr_blocks      = ["0.0.0.0/0"]
+    cidr_blocks      = ["10.0.1.0/24"]
   }
 
   egress {
@@ -129,15 +129,6 @@ resource "aws_security_group" "alb-sg" {
     
   }
 
-  ingress {
-    description      = "SSH"
-    from_port        = 22
-    to_port          = 22
-    protocol         = "tcp"
-    cidr_blocks      = ["0.0.0.0/0"]
-    
-  }
-
   egress {
     from_port        = 0
     to_port          = 0
@@ -151,11 +142,37 @@ resource "aws_security_group" "alb-sg" {
   }
 }
 
-resource "aws_security_group_rule" "security_group_rule_alb" {
+resource "aws_security_group" "asg-sg" {
+  name        = "instance-sg"
+  description = "security group for instance"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    description      = "HTTP"
+    from_port        = 80
+    to_port          = 80
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+
+  }
+
+  egress {
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    
+  } 
+  tags = {
+    Name = "ASG security group"
+  }
+}
+
+  resource "aws_security_group_rule" "asg-sg-rule" {
   type              = "ingress"
   from_port         = 22
   to_port           = 22
   protocol          = "tcp"
   source_security_group_id = aws_security_group.basion-sg.id 
-  security_group_id = aws_security_group.alb-sg.id
+  security_group_id = aws_security_group.asg-sg.id
 }
