@@ -32,11 +32,13 @@ resource "aws_iam_role_policy_attachment" "demo-node-AmazonEC2ContainerRegistryR
   role       = aws_iam_role.node-role.name
 }
 
-resource "aws_eks_node_group" "node-group" {
+resource "aws_eks_node_group" "node-group-1234" {
   cluster_name    = aws_eks_cluster.eks-cluster.name
-  node_group_name = "node group"
+  node_group_name = "node-group"
   node_role_arn   = aws_iam_role.node-role.arn
   subnet_ids      = var.public_subnets
+  disk_size       = 10 
+  instance_types  = ["t2.small"]
 
   scaling_config {
     desired_size = 1
@@ -44,14 +46,10 @@ resource "aws_eks_node_group" "node-group" {
     min_size     = 1
   }
 
-  update_config {
-    max_unavailable = 2
-  }
-
   depends_on = [
-    aws_iam_role_policy_attachment.example-AmazonEKSWorkerNodePolicy,
-    aws_iam_role_policy_attachment.example-AmazonEKS_CNI_Policy,
-    aws_iam_role_policy_attachment.example-AmazonEC2ContainerRegistryReadOnly,
+    aws_iam_role_policy_attachment.demo-node-AmazonEKSWorkerNodePolicy,
+    aws_iam_role_policy_attachment.demo-node-AmazonEKS_CNI_Policy,
+    aws_iam_role_policy_attachment.demo-node-AmazonEC2ContainerRegistryReadOnly,
   ]
 }
 
